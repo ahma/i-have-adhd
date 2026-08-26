@@ -35,6 +35,7 @@ type AdhdModeState = {
 };
 
 type AdhdConfig = {
+  alwaysOn?: boolean;
   hideStatus?: boolean;
 };
 
