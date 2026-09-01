@@ -96,13 +96,19 @@ claude plugin marketplace remove i-have-adhd
 touch ~/.claude/.i-have-adhd-always
 ```
 
+カスタムの Claude 設定ディレクトリを使用している場合は、代わりにそこにフラグファイルを作成します：
+
+```bash
+touch "$CLAUDE_CONFIG_DIR/.i-have-adhd-always"
+```
+
 手動呼び出し（オンデマンド）に戻す場合：
 
 ```bash
 rm ~/.claude/.i-have-adhd-always
 ```
 
-フックはフラグファイルが存在する場合にのみ動作するため、プラグインをインストールしただけでは動作に影響しません。設定ディレクトリを変更している場合は `$CLAUDE_CONFIG_DIR` が尊重されます。現在のセッションでのみ無効化したい場合は `stop adhd mode` と入力してください。
+フックはフラグファイルが存在する場合にのみ動作するため、プラグインをインストールしただけでは動作に影響しません。現在のセッションでのみ無効化したい場合は `stop adhd mode` と入力してください。
 
 </details>
 
