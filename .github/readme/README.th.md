@@ -1,61 +1,38 @@
 <p align="center">
-  <a href="https://github.com/ayghri/i-have-adhd"> <img src="/logo.png" alt="i-have-adhd" width="140" /></a>
+  <img src="../../logo.png" alt="i-have-adhd" width="140" />
 </p>
 <p align="center">
-  <strong align="center">ตอบได้ใจความไม่ยืดเยื้อ จะสมาธิสั้นหรือไม่ก็เข้าใจได้!</strong>
+  <strong align="center">ตอบได้ใจความ ไม่ยืดเยื้อ จะสมาธิสั้นหรือไม่ก็เข้าใจได้!</strong>
 </p>
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/ayghri/i-have-adhd?style=flat" alt="License"></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/github/license/ayghri/i-have-adhd?style=flat" alt="สัญญาอนุญาต"></a>
 </p>
 
 <p align="center">
-  <a href="/README.md">English</a> ·
-  <a href=".github/readme/README.zh-CN.md">简体中文</a> ·
-  <a href=".github/readme/README.ja.md">日本語</a> ·
-  <a href=".github/readme/README.ko.md">한국어</a> ·
-  <a href=".github/readme/README.vi.md">Tiếng Việt</a> ·
-  <a href=".github/readme/README.pt-BR.md">Português (BR)</a> ·
-  <strong>ภาษาไทย</strong> 
+  <a href="../../README.md" title="English" aria-label="English">🇬🇧</a> ·
+  <a href="README.zh-CN.md" title="简体中文" aria-label="简体中文">🇨🇳</a> ·
+  <a href="README.pt-BR.md" title="Português (Brasil)" aria-label="Português (Brasil)">🇧🇷</a> ·
+  <a href="README.ja.md" title="日本語" aria-label="日本語">🇯🇵</a> ·
+  <a href="README.vi.md" title="Tiếng Việt" aria-label="Tiếng Việt">🇻🇳</a> ·
+  <a href="README.ko.md" title="한국어" aria-label="한국어">🇰🇷</a> ·
+  <strong title="ภาษาไทย" aria-label="ภาษาไทย">🇹🇭</strong>
 </p>
-
 
 ## การติดตั้ง
 
-<details>
-<summary><strong>Claude Code</strong></summary>
+คัดลอกข้อความนี้ไปวางในพรอมต์ของ CLI:
 
-```bash
-claude plugin marketplace add ayghri/i-have-adhd
-claude plugin install i-have-adhd@i-have-adhd
+```text
+Install the i-have-adhd skill/plugin from https://github.com/ayghri/i-have-adhd, refer to the repo's AGENTS.md for instructions.
 ```
 
-จากนั้นพิมพ์ `/i-have-adhd` โดยไม่ต้องโคลนโปรเจกต์มาไว้ในเครื่อง เพราะ Claude Code จะคอยโหลดโปรเจกต์นี้และอัปเดตอยู่ตลอด
-
-ต้องการเปิดใช้งานให้ทุกเซลซั่นงั้นหรอ? ใช้คำสั่ง `touch ~/.claude/.i-have-adhd-always` ดูสิ (ดูเพิ่มเติมได้ใน [INSTALL.md](./INSTALL.md)).
-
-</details>
-
-<details>
-<summary><strong>Codex</strong></summary>
-
-```bash
-codex plugin marketplace add ayghri/i-have-adhd --ref main
-codex plugin add i-have-adhd@i-have-adhd
-```
-
-จากนั้นพิมพ์ `$i-have-adhd` เพื่อเปิดใช้รูปแบบคำตอบนี้ นอกจากนี้ Skill จะถูกเรียกใช้งานอัตโนมัติ เมื่อ Codex ตรวจพบว่างานนั้นเหมาะสมกับรูปแบบนี้
-
-</details>
-
-ส่วนคำแนะนำการติดตั้งใน coding agents อื่น ๆ สามารถดูได้ใน [INSTALL.md](./INSTALL.md).
+หรือ 🔗 [ดูวิธีติดตั้ง](../../INSTALL.md) (ภาษาอังกฤษ)
 
 ## มันทำอะไรได้บ้าง
 
-เป็น Skill ให้สำหรับผู้ช่วยเขียนโค้ดของคุณ ซึ่งช่วยไม่ให้คำตอบสำคัญ ๆ ถูกพล่ามหายไปในข้อความยาว ๆ โดยจะแสดงสิ่งที่ต้องทำก่อน มีขั้นตอนและเลขกำกับ และไม่มีประโยคอย่าง "หวังว่าจะช่วยได้นะ!"
-
+เป็น Skill สำหรับผู้ช่วยเขียนโค้ดของคุณ ซึ่งช่วยไม่ให้คำตอบสำคัญ ๆ ถูกกลบด้วยข้อความยาว ๆ โดยจะแสดงสิ่งที่ต้องทำก่อน มีขั้นตอนและเลขกำกับ และไม่มีประโยคอย่าง “หวังว่าจะช่วยได้นะ!”
 
 ## มันเปลี่ยนยังไงบ้าง
-
 
 <table>
 <tr>
@@ -71,7 +48,7 @@ codex plugin add i-have-adhd@i-have-adhd
 
 ## หลังใช้
 
-> รัน `npm install jsonwebtoken@latest` แล้วแก้ไขไฟล์ `src/auth.ts:42`.
+> รัน `npm install jsonwebtoken@latest` แล้วแก้ไขไฟล์ `src/auth.ts:42`
 >
 > 1. เปิดไฟล์ `src/auth.ts`
 > 2. แทนที่ฟังก์ชัน `verifyToken` (บรรทัดที่ 42–58) ด้วยโค้ดด้านล่าง
@@ -83,21 +60,20 @@ codex plugin add i-have-adhd@i-have-adhd
 </tr>
 </table>
 
-
 ## กฎการตอบ
 
-มีทั้งหมด 10 ข้อ อ่านฉบับเต็มได้ใน [SKILL.md](./skills/i-have-adhd/SKILL.md).
+มีทั้งหมด 10 ข้อ อ่านฉบับเต็มได้ใน [SKILL.md](../../skills/i-have-adhd/SKILL.md)
 
 1. เริ่มต้นด้วยสิ่งที่ทำถัดไป
 2. ใช้หมายเลขกำกับในกรณีที่งานมีหลายขั้นตอน
 3. จบด้วยขั้นตอนถัดไปที่ชัดเจนหนึ่งอย่าง
 4. ตัดเนื้อหานอกประเด็นออก
 5. ทบทวนสถานะปัจจุบันในทุก ๆ ข้อความ
-6. ต้องระบุเวลาอย่างชัดเจน (ระบุเป็นจำนวนนาที ไม่ใช่แค่คำว่า "สักพักนะ")
+6. ต้องระบุเวลาอย่างชัดเจน (ระบุเป็นจำนวนนาที ไม่ใช่แค่คำว่า “สักพักนะ”)
 7. ทำให้ความสำเร็จและความคืบหน้าชัดเจน
 8. อธิบายข้อผิดพลาดอย่างตรงไปตรงมา
 9. จำกัดรายการไม่เกิน 5 ข้อ
-10. ไม่มีคำนำ ไม่ต้องสรปซ้ำ และไม่มีคำลงท้ายที่ไม่จำเป็น
+10. ไม่มีคำนำ ไม่ต้องสรุปซ้ำ และไม่มีคำลงท้ายที่ไม่จำเป็น
 
 ## ปรับแต่งเพิ่มเติม
 
@@ -114,10 +90,10 @@ claude plugin install i-have-adhd@i-have-adhd
 
 ## เครดิต
 
-สร้างขึ้นโดยอ้างอิงแนวคิดบางส่วนจากหนังสือ *The Adult ADHD Tool Kit* โดย J. Russell Ramsay และ Anthony L. Rostain และนำมาปรับแต่งให้เหมาะสมที่ LLM ควรตอบ ไม่ใช่นำมาเป็นคู่มือมนุษย์ช่วยจัดการแทนชีวิตประจำวัน 
+สร้างขึ้นโดยอ้างอิงแนวคิดบางส่วนจากหนังสือ *The Adult ADHD Tool Kit* โดย J. Russell Ramsay และ Anthony L. Rostain และนำมาปรับแต่งให้เหมาะกับวิธีที่ LLM ควรตอบ ไม่ใช่คู่มือช่วยจัดการชีวิตประจำวันของมนุษย์
 
-## License
+## สัญญาอนุญาต
 
-MIT.
+MIT
 
-กดดาว ⭐ ให้ด้วย หากมันช่วยให้คุณไม่ต้องเลื่อนผ่านแล้วเจอคำว่า "เป็นคำถามที่ดีมาก!"
+กดดาว ⭐ หากมันช่วยให้คุณไม่ต้องเลื่อนผ่านคำว่า “เป็นคำถามที่ดีมาก!” อีกครั้ง
