@@ -19,7 +19,13 @@
 
 ## インストール
 
-🔗 [インストール手順](../install/INSTALL.ja.md)
+CLIのプロンプトに以下をコピー＆ペーストしてください：
+
+```text
+Install the i-have-adhd skill/plugin from https://github.com/ayghri/i-have-adhd, refer to the repo's AGENTS.md for instructions.
+```
+
+または、🔗 [インストール手順を確認する](../install/INSTALL.ja.md)。
 
 ## 機能
 

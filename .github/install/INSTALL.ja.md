@@ -510,7 +510,52 @@ touch ~/.pi/agent/.i-have-adhd-always
 rm ~/.pi/agent/.i-have-adhd-always
 ```
 
+### 設定ファイル（任意）
+
+Pi のエージェント設定ディレクトリに `~/.pi/agent/i-have-adhd.json` を作成します：
+
+```json
+{
+  "alwaysOn": true,
+  "hideStatus": true
+}
+```
+
+- `alwaysOn`：すべてのセッションをルール有効の状態で開始します。従来の `.i-have-adhd-always` フラグファイルも引き続き使えます。
+- `hideStatus`：ステータスバーの `● ADHD ON` 表示を隠します。ルールと `/i-have-adhd` コマンドは引き続き機能します。
+
+設定は拡張機能の起動時に一度だけ読み込まれるため、変更後は Pi を再起動してください。現在のセッションに保存された選択は `alwaysOn` より優先されるため、`stop adhd mode` を実行するとそのセッションでは無効のままになります。
+
 `PI_CODING_AGENT_DIR` が設定されている場合は、そのディレクトリ内に `.i-have-adhd-always` を配置してください。フラグを変更した後は `/reload` を実行するか、新しいセッションを開始してください。
+
+</details>
+
+
+<details>
+<summary><strong>Oh My Pi (OMP)</strong></summary>
+
+### インストール
+
+```bash
+omp plugin marketplace add ayghri/i-have-adhd
+omp plugin install --scope user i-have-adhd@i-have-adhd
+```
+
+新しい OMP セッションを開始し、`/i-have-adhd` を実行してモードを切り替えます。
+
+### 更新
+
+```bash
+omp plugin marketplace update i-have-adhd
+omp plugin upgrade --scope user i-have-adhd@i-have-adhd
+```
+
+### アンインストール
+
+```bash
+omp plugin uninstall --scope user i-have-adhd@i-have-adhd
+omp plugin marketplace remove i-have-adhd
+```
 
 </details>
 
@@ -664,7 +709,7 @@ npx skills remove i-have-adhd -g    # グローバルにインストールした
 
 エージェントの永続ルール設定ファイルに以下を貼り付けます。
 
-Cursor の場合：**Settings → Rules → User Rules**、または `.cursor/rules/` 配下のプロジェクトルールで `alwaysApply: true` を設定。  
+Cursor の場合：**Settings → Rules → User Rules**、または `.cursor/rules/` 配下のプロジェクトルールで `alwaysApply: true` を設定。
 
 OpenCode の場合：`~/.config/opencode/AGENTS.md`。
 
