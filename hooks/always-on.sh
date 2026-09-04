@@ -1,16 +1,18 @@
 #!/usr/bin/env sh
-# SessionStart hook: injects the full i-have-adhd ruleset when the user has
-# opted in by creating $CLAUDE_CONFIG_DIR/.i-have-adhd-always (default ~/.claude).
+# SessionStart hook: injects the full i-have-adhd ruleset at the start of every
+# session. Always-on is the default; opt out by creating
+# $CLAUDE_CONFIG_DIR/.i-have-adhd-off (default ~/.claude). The older opt-in
+# flag, .i-have-adhd-always, is still accepted and changes nothing.
 # Never blocks session start: any failure exits 0.
 #
 # POSIX fallback for environments where the default Node hook cannot run. It
 # works with sh on macOS/Linux and Git Bash on Windows without a Node install.
 
 claude_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-flag_path="$claude_dir/.i-have-adhd-always"
+off_path="$claude_dir/.i-have-adhd-off"
 
-# Only fire when the user has opted in.
-[ -f "$flag_path" ] || exit 0
+# On by default. Stay silent only when the user has opted out.
+[ -f "$off_path" ] && exit 0
 
 # $0 is the absolute script path substituted into hooks.json by Claude Code,
 # so resolve SKILL.md relative to it instead of trusting an exported env var.
@@ -33,5 +35,5 @@ body=$(awk '
   !skipping { print }
 ' "$skill_path" "$skill_path") || exit 0
 
-printf 'ADHD MODE ACTIVE (always-on). The ruleset below applies to every response. "stop adhd mode" turns it off for this session; delete %s to turn always-on off for good.\n\n%s\n' \
-  "$flag_path" "$body"
+printf 'ADHD MODE ACTIVE (always-on). The ruleset below applies to every response. "stop adhd mode" turns it off for this session; create %s to turn always-on off for good.\n\n%s\n' \
+  "$off_path" "$body"

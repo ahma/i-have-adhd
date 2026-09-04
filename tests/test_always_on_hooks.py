@@ -80,13 +80,25 @@ class AlwaysOnHookTest(unittest.TestCase):
 
     @staticmethod
     def normalize(stdout):
-        # The banner embeds the flag path. On Windows the sh runtime joins it
+        # The banner embeds the opt-out path. On Windows the sh runtime joins it
         # with "/" while node and PowerShell join with "\"; both name the same
         # file, so unify separators (and newlines) before comparing runtimes.
         return stdout.replace("\r\n", "\n").replace("\\", "/")
 
-    def test_hook_is_silent_without_opt_in_flag(self):
+    def test_hook_fires_by_default_without_any_flag(self):
         self.assertTrue(self.runtimes(), "no hook runtime is available")
+
+        for name, command in self.runtimes():
+            with self.subTest(runtime=name):
+                result = self.run_hook(command)
+                self.assertEqual(0, result.returncode)
+                self.assertEqual("", result.stderr)
+                self.assertTrue(result.stdout.startswith("ADHD MODE ACTIVE (always-on)."))
+                self.assertIn(".i-have-adhd-off", result.stdout)
+                self.assertIn("## Rules", result.stdout)
+
+    def test_hook_is_silent_with_opt_out_flag(self):
+        (self.config_dir / ".i-have-adhd-off").touch()
 
         for name, command in self.runtimes():
             with self.subTest(runtime=name):
@@ -95,10 +107,19 @@ class AlwaysOnHookTest(unittest.TestCase):
                 self.assertEqual("", result.stdout)
                 self.assertEqual("", result.stderr)
 
+    def test_opt_out_wins_over_legacy_opt_in_flag(self):
+        (self.config_dir / ".i-have-adhd-off").touch()
+        (self.config_dir / ".i-have-adhd-always").touch()
+
+        for name, command in self.runtimes():
+            with self.subTest(runtime=name):
+                result = self.run_hook(command)
+                self.assertEqual(0, result.returncode)
+                self.assertEqual("", result.stdout)
+
     def test_runtimes_strip_frontmatter_with_trailing_whitespace(self):
         skill_path = self.plugin_root / "skills" / "i-have-adhd" / "SKILL.md"
         skill_path.write_text("---   \nname: fixture\n--- \t\nFixture body.\n")
-        (self.config_dir / ".i-have-adhd-always").touch()
         outputs = {}
 
         for name, command in self.runtimes():
@@ -119,7 +140,6 @@ class AlwaysOnHookTest(unittest.TestCase):
         # below" followed by nothing.
         skill_path = self.plugin_root / "skills" / "i-have-adhd" / "SKILL.md"
         skill_path.write_text("---\nname: fixture\nFixture body, fence never closed.\n")
-        (self.config_dir / ".i-have-adhd-always").touch()
         outputs = {}
 
         for name, command in self.runtimes():
@@ -134,15 +154,15 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertEqual(1, len(set(outputs.values())))
 
     def test_codex_command_runs_the_hook_instead_of_parsing_session_json(self):
-        (self.config_dir / ".i-have-adhd-always").touch()
-
         result = self.run_codex_hook()
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("", result.stderr)
         self.assertIn("ADHD MODE ACTIVE (always-on)", result.stdout)
 
-    def test_codex_command_is_silent_without_opt_in_flag(self):
+    def test_codex_command_is_silent_with_opt_out_flag(self):
+        (self.config_dir / ".i-have-adhd-off").touch()
+
         result = self.run_codex_hook()
 
         self.assertEqual(0, result.returncode, result.stderr)
@@ -168,9 +188,9 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertIn("await import", command)
         self.assertIn(".catch", command)
 
-    def run_node_hook_with_event(self, event_name, flag=True):
-        if flag:
-            (self.config_dir / ".i-have-adhd-always").touch()
+    def run_node_hook_with_event(self, event_name, opt_out=False):
+        if opt_out:
+            (self.config_dir / ".i-have-adhd-off").touch()
         node = shutil.which("node")
         self.assertTrue(node, "node is required for the event-shape tests")
         env = os.environ.copy()
@@ -196,8 +216,8 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertIn("## Rules", output["additionalContext"])
         self.assertNotIn("name: i-have-adhd", output["additionalContext"])
 
-    def test_subagent_start_is_silent_without_opt_in_flag(self):
-        result = self.run_node_hook_with_event("SubagentStart", flag=False)
+    def test_subagent_start_is_silent_with_opt_out_flag(self):
+        result = self.run_node_hook_with_event("SubagentStart", opt_out=True)
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("", result.stdout)

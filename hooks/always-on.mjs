@@ -1,6 +1,8 @@
-// SessionStart / SubagentStart hook: injects the full i-have-adhd ruleset when
-// the user has opted in by creating $CLAUDE_CONFIG_DIR/.i-have-adhd-always
-// (default ~/.claude). Never blocks session start: any failure exits 0.
+// SessionStart / SubagentStart hook: injects the full i-have-adhd ruleset at
+// the start of every session. Always-on is the default; opt out by creating
+// $CLAUDE_CONFIG_DIR/.i-have-adhd-off (default ~/.claude). The older opt-in
+// flag, .i-have-adhd-always, is still accepted and changes nothing.
+// Never blocks session start: any failure exits 0.
 //
 // Runs under Node so it works on macOS, Linux, and Windows. The shared Claude
 // Code/Codex hook launches this module from the plugin-root environment rather
@@ -37,10 +39,10 @@ function readEventName() {
 
 try {
   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
-  const flagPath = path.join(claudeDir, ".i-have-adhd-always");
+  const offPath = path.join(claudeDir, ".i-have-adhd-off");
 
-  // Only fire when the user has opted in.
-  if (!fs.existsSync(flagPath)) process.exit(0);
+  // On by default. Stay silent only when the user has opted out.
+  if (fs.existsSync(offPath)) process.exit(0);
 
   // Resolve SKILL.md relative to this script's own location, not a trusted env var.
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -73,7 +75,7 @@ try {
   process.stdout.write(
     "ADHD MODE ACTIVE (always-on). The ruleset below applies to every response. " +
       '"stop adhd mode" turns it off for this session; ' +
-      `delete ${flagPath} to turn always-on off for good.\n\n${body}\n`,
+      `create ${offPath} to turn always-on off for good.\n\n${body}\n`,
   );
 } catch {
   // Never block session start.
