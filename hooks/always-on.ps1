@@ -1,8 +1,10 @@
 # SessionStart hook fallback for Windows PowerShell. Injects the full
-# i-have-adhd ruleset at the start of every session. Always-on is the default;
-# opt out by creating $CLAUDE_CONFIG_DIR/.i-have-adhd-off (default ~/.claude).
-# The older opt-in flag, .i-have-adhd-always, is still accepted and changes
-# nothing. Never blocks session start: any failure exits 0.
+# i-have-adhd ruleset at the start of every session once always-on is turned
+# on. Off by default. Any one of these turns it on: the flag file
+# $CLAUDE_CONFIG_DIR/.i-have-adhd-always (default ~/.claude), the plugin option
+# "always_on" (exported to hooks as CLAUDE_PLUGIN_OPTION_ALWAYS_ON), or the
+# environment variable I_HAVE_ADHD_ALWAYS_ON. $CLAUDE_CONFIG_DIR/.i-have-adhd-off
+# wins over all. Never blocks session start: any failure exits 0.
 
 try {
   $claudeDir = if ($env:CLAUDE_CONFIG_DIR) {
@@ -11,9 +13,21 @@ try {
     Join-Path ([Environment]::GetFolderPath("UserProfile")) ".claude"
   }
   $offPath = Join-Path $claudeDir ".i-have-adhd-off"
+  $alwaysPath = Join-Path $claudeDir ".i-have-adhd-always"
 
-  # On by default. Stay silent only when the user has opted out.
+  # Explicit opt-out wins over every way of opting in.
   if (Test-Path -LiteralPath $offPath -PathType Leaf) {
+    exit 0
+  }
+
+  function Test-Truthy([string]$value) {
+    if ($null -eq $value) { return $false }
+    return @("1", "true", "yes", "on") -contains $value.Trim().ToLowerInvariant()
+  }
+  $enabled = (Test-Path -LiteralPath $alwaysPath -PathType Leaf) -or
+    (Test-Truthy $env:CLAUDE_PLUGIN_OPTION_ALWAYS_ON) -or
+    (Test-Truthy $env:I_HAVE_ADHD_ALWAYS_ON)
+  if (-not $enabled) {
     exit 0
   }
 

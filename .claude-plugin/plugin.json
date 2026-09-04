@@ -1,9 +1,17 @@
 {
   "name": "i-have-adhd",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Shape Claude Code output for an ADHD reader: lead with the next action, number steps, suppress tangents, restate state, make wins visible.",
   "author": {
     "name": "Ayoub G.",
     "url": "https://github.com/ayghri"
+  },
+  "userConfig": {
+    "always_on": {
+      "type": "boolean",
+      "title": "Always on",
+      "description": "Load the i-have-adhd ruleset at the start of every session and pass it to subagents, without typing /i-have-adhd. Same effect as the .i-have-adhd-always flag file.",
+      "default": false
+    }
   }
 }

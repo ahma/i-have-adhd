@@ -1,8 +1,10 @@
 #!/usr/bin/env sh
 # SessionStart hook: injects the full i-have-adhd ruleset at the start of every
-# session. Always-on is the default; opt out by creating
-# $CLAUDE_CONFIG_DIR/.i-have-adhd-off (default ~/.claude). The older opt-in
-# flag, .i-have-adhd-always, is still accepted and changes nothing.
+# session once always-on is turned on. Off by default. Any one of these turns
+# it on: the flag file $CLAUDE_CONFIG_DIR/.i-have-adhd-always (default
+# ~/.claude), the plugin option "always_on" (exported to hooks as
+# CLAUDE_PLUGIN_OPTION_ALWAYS_ON), or the environment variable
+# I_HAVE_ADHD_ALWAYS_ON. $CLAUDE_CONFIG_DIR/.i-have-adhd-off wins over all.
 # Never blocks session start: any failure exits 0.
 #
 # POSIX fallback for environments where the default Node hook cannot run. It
@@ -10,9 +12,20 @@
 
 claude_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 off_path="$claude_dir/.i-have-adhd-off"
+always_path="$claude_dir/.i-have-adhd-always"
 
-# On by default. Stay silent only when the user has opted out.
+# Explicit opt-out wins over every way of opting in.
 [ -f "$off_path" ] && exit 0
+
+truthy() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
+    1|true|yes|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+if [ ! -f "$always_path" ] && ! truthy "${CLAUDE_PLUGIN_OPTION_ALWAYS_ON:-}" && ! truthy "${I_HAVE_ADHD_ALWAYS_ON:-}"; then
+  exit 0
+fi
 
 # Also silent when settings.json selects the plugin's output style: the rules
 # are already in the system prompt (with or without a plugin prefix).

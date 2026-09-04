@@ -1,7 +1,12 @@
 // SessionStart / SubagentStart hook: injects the full i-have-adhd ruleset at
-// the start of every session. Always-on is the default; opt out by creating
-// $CLAUDE_CONFIG_DIR/.i-have-adhd-off (default ~/.claude). The older opt-in
-// flag, .i-have-adhd-always, is still accepted and changes nothing.
+// the start of every session once the user has turned always-on on. Off by
+// default. Any one of these turns it on:
+//   - the flag file $CLAUDE_CONFIG_DIR/.i-have-adhd-always (default ~/.claude)
+//   - the plugin option "always_on" (plugin.json userConfig), which Claude Code
+//     exports to hooks as CLAUDE_PLUGIN_OPTION_ALWAYS_ON
+//   - the environment variable I_HAVE_ADHD_ALWAYS_ON (for harnesses without
+//     plugin options, e.g. Codex)
+// The file $CLAUDE_CONFIG_DIR/.i-have-adhd-off wins over all of them.
 // Never blocks session start: any failure exits 0.
 //
 // The plugin also ships the same rules as an output style
@@ -61,12 +66,23 @@ function outputStyleActive(claudeDir) {
   }
 }
 
+function truthy(value) {
+  return typeof value === "string" && ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
 try {
   const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude");
   const offPath = path.join(claudeDir, ".i-have-adhd-off");
+  const alwaysPath = path.join(claudeDir, ".i-have-adhd-always");
 
-  // On by default. Stay silent only when the user has opted out.
+  // Explicit opt-out wins over every way of opting in.
   if (fs.existsSync(offPath)) process.exit(0);
+
+  const enabled =
+    fs.existsSync(alwaysPath) ||
+    truthy(process.env.CLAUDE_PLUGIN_OPTION_ALWAYS_ON) ||
+    truthy(process.env.I_HAVE_ADHD_ALWAYS_ON);
+  if (!enabled) process.exit(0);
 
   const event = readEvent();
   const eventName =

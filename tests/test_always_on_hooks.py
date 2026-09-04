@@ -42,9 +42,15 @@ class AlwaysOnHookTest(unittest.TestCase):
             )
         return runtimes
 
-    def run_hook(self, command):
+    def opt_in(self):
+        (self.config_dir / ".i-have-adhd-always").touch()
+
+    def run_hook(self, command, **env_extra):
         env = os.environ.copy()
         env["CLAUDE_CONFIG_DIR"] = str(self.config_dir)
+        for key in ("CLAUDE_PLUGIN_OPTION_ALWAYS_ON", "I_HAVE_ADHD_ALWAYS_ON"):
+            env.pop(key, None)
+        env.update(env_extra)
         return subprocess.run(
             [str(part) for part in command],
             check=False,
@@ -53,11 +59,14 @@ class AlwaysOnHookTest(unittest.TestCase):
             env=env,
         )
 
-    def run_codex_hook(self, plugin_root=None):
+    def run_codex_hook(self, plugin_root=None, **env_extra):
         config = json.loads((ROOT / "hooks" / "hooks.json").read_text())
         hook = config["hooks"]["SessionStart"][0]["hooks"][0]
         env = os.environ.copy()
         env["CLAUDE_CONFIG_DIR"] = str(self.config_dir)
+        for key in ("CLAUDE_PLUGIN_OPTION_ALWAYS_ON", "I_HAVE_ADHD_ALWAYS_ON"):
+            env.pop(key, None)
+        env.update(env_extra)
         plugin_root = plugin_root or self.plugin_root
         env["CLAUDE_PLUGIN_ROOT"] = str(plugin_root)
         env["PLUGIN_ROOT"] = str(plugin_root)
@@ -85,20 +94,59 @@ class AlwaysOnHookTest(unittest.TestCase):
         # file, so unify separators (and newlines) before comparing runtimes.
         return stdout.replace("\r\n", "\n").replace("\\", "/")
 
-    def test_hook_fires_by_default_without_any_flag(self):
+    def test_hook_is_silent_by_default(self):
         self.assertTrue(self.runtimes(), "no hook runtime is available")
 
         for name, command in self.runtimes():
             with self.subTest(runtime=name):
                 result = self.run_hook(command)
                 self.assertEqual(0, result.returncode)
+                self.assertEqual("", result.stdout)
                 self.assertEqual("", result.stderr)
-                self.assertTrue(result.stdout.startswith("ADHD MODE ACTIVE (always-on)."))
-                self.assertIn(".i-have-adhd-off", result.stdout)
-                self.assertIn("## Rules", result.stdout)
+
+    def assert_fires(self, result):
+        self.assertEqual(0, result.returncode)
+        self.assertEqual("", result.stderr)
+        self.assertTrue(result.stdout.startswith("ADHD MODE ACTIVE (always-on)."))
+        self.assertIn(".i-have-adhd-off", result.stdout)
+        self.assertIn("## Rules", result.stdout)
+
+    def test_hook_fires_with_the_flag_file(self):
+        self.opt_in()
+        for name, command in self.runtimes():
+            with self.subTest(runtime=name):
+                self.assert_fires(self.run_hook(command))
+
+    def test_hook_fires_with_the_plugin_option(self):
+        for value in ("true", "1", "YES", "on"):
+            for name, command in self.runtimes():
+                with self.subTest(runtime=name, value=value):
+                    self.assert_fires(self.run_hook(command, CLAUDE_PLUGIN_OPTION_ALWAYS_ON=value))
+
+    def test_hook_fires_with_the_environment_variable(self):
+        for name, command in self.runtimes():
+            with self.subTest(runtime=name):
+                self.assert_fires(self.run_hook(command, I_HAVE_ADHD_ALWAYS_ON="1"))
+
+    def test_plugin_option_false_keeps_the_hook_silent(self):
+        for value in ("false", "0", "no", "off", ""):
+            for name, command in self.runtimes():
+                with self.subTest(runtime=name, value=value):
+                    result = self.run_hook(command, CLAUDE_PLUGIN_OPTION_ALWAYS_ON=value)
+                    self.assertEqual(0, result.returncode)
+                    self.assertEqual("", result.stdout)
+
+    def test_plugin_manifest_declares_the_always_on_option(self):
+        manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+        option = manifest["userConfig"]["always_on"]
+        self.assertEqual("boolean", option["type"])
+        self.assertIs(False, option["default"])
+        for key in ("title", "description"):
+            self.assertTrue(option[key])
 
     def test_hook_is_silent_with_opt_out_flag(self):
         (self.config_dir / ".i-have-adhd-off").touch()
+        self.opt_in()
 
         for name, command in self.runtimes():
             with self.subTest(runtime=name):
@@ -108,6 +156,7 @@ class AlwaysOnHookTest(unittest.TestCase):
                 self.assertEqual("", result.stderr)
 
     def test_hook_is_silent_when_output_style_is_selected(self):
+        self.opt_in()
         for style in ("i-have-adhd", "i-have-adhd:i-have-adhd"):
             (self.config_dir / "settings.json").write_text(
                 json.dumps({"model": "x", "outputStyle": style})
@@ -120,6 +169,7 @@ class AlwaysOnHookTest(unittest.TestCase):
                     self.assertEqual("", result.stderr)
 
     def test_hook_fires_when_another_output_style_is_selected(self):
+        self.opt_in()
         (self.config_dir / "settings.json").write_text(
             json.dumps({"outputStyle": "Concise"})
         )
@@ -142,19 +192,20 @@ class AlwaysOnHookTest(unittest.TestCase):
         matcher = config["hooks"]["SessionStart"][0]["matcher"]
         self.assertEqual({"startup", "resume", "clear", "compact", "fork"}, set(matcher.split("|")))
 
-    def test_opt_out_wins_over_legacy_opt_in_flag(self):
+    def test_opt_out_wins_over_every_opt_in(self):
         (self.config_dir / ".i-have-adhd-off").touch()
-        (self.config_dir / ".i-have-adhd-always").touch()
+        self.opt_in()
 
         for name, command in self.runtimes():
             with self.subTest(runtime=name):
-                result = self.run_hook(command)
+                result = self.run_hook(command, CLAUDE_PLUGIN_OPTION_ALWAYS_ON="true", I_HAVE_ADHD_ALWAYS_ON="1")
                 self.assertEqual(0, result.returncode)
                 self.assertEqual("", result.stdout)
 
     def test_runtimes_strip_frontmatter_with_trailing_whitespace(self):
         skill_path = self.plugin_root / "skills" / "i-have-adhd" / "SKILL.md"
         skill_path.write_text("---   \nname: fixture\n--- \t\nFixture body.\n")
+        self.opt_in()
         outputs = {}
 
         for name, command in self.runtimes():
@@ -175,6 +226,7 @@ class AlwaysOnHookTest(unittest.TestCase):
         # below" followed by nothing.
         skill_path = self.plugin_root / "skills" / "i-have-adhd" / "SKILL.md"
         skill_path.write_text("---\nname: fixture\nFixture body, fence never closed.\n")
+        self.opt_in()
         outputs = {}
 
         for name, command in self.runtimes():
@@ -189,14 +241,29 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertEqual(1, len(set(outputs.values())))
 
     def test_codex_command_runs_the_hook_instead_of_parsing_session_json(self):
+        self.opt_in()
         result = self.run_codex_hook()
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("", result.stderr)
         self.assertIn("ADHD MODE ACTIVE (always-on)", result.stdout)
 
+    def test_codex_command_is_silent_by_default(self):
+        result = self.run_codex_hook()
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("", result.stderr)
+        self.assertEqual("", result.stdout)
+
+    def test_codex_command_honours_the_environment_variable(self):
+        result = self.run_codex_hook(I_HAVE_ADHD_ALWAYS_ON="1")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("ADHD MODE ACTIVE (always-on)", result.stdout)
+
     def test_codex_command_is_silent_with_opt_out_flag(self):
         (self.config_dir / ".i-have-adhd-off").touch()
+        self.opt_in()
 
         result = self.run_codex_hook()
 
@@ -224,12 +291,15 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertIn(".catch", command)
 
     def run_node_hook_with_event(self, event_name, opt_out=False, **extra):
+        self.opt_in()
         if opt_out:
             (self.config_dir / ".i-have-adhd-off").touch()
         node = shutil.which("node")
         self.assertTrue(node, "node is required for the event-shape tests")
         env = os.environ.copy()
         env["CLAUDE_CONFIG_DIR"] = str(self.config_dir)
+        for key in ("CLAUDE_PLUGIN_OPTION_ALWAYS_ON", "I_HAVE_ADHD_ALWAYS_ON"):
+            env.pop(key, None)
         return subprocess.run(
             [node, str(self.plugin_root / "hooks" / "always-on.mjs")],
             check=False,

@@ -105,29 +105,28 @@ The bare `i-have-adhd` does not resolve (verified on Claude Code 2.1.260).
 
 Applies after `/clear` or a restart. The style keeps Claude Code's built-in software-engineering instructions (`keep-coding-instructions: true`). While the style is selected in your user `settings.json`, the `SessionStart` hook below stands down so the rules are not injected twice; `SubagentStart` still passes them to subagents, which run under their own system prompt.
 
-### Always-on (default)
+### Always-on (optional)
 
-A `SessionStart` hook loads the full ruleset at the start of every session, no `/i-have-adhd` needed. It also fires for forked sessions (`/fork`, `/branch`, `--fork-session`). A `SubagentStart` hook passes the same ruleset to every subagent except forks, which inherit the parent conversation. Both are on as soon as the plugin is installed.
+A `SessionStart` hook loads the full ruleset at the start of every session, no `/i-have-adhd` needed. It also fires for forked sessions (`/fork`, `/branch`, `--fork-session`). A `SubagentStart` hook passes the same ruleset to every subagent except forks, which inherit the parent conversation. Both are off until you turn them on, in any one of three ways:
 
-Turn always-on off and go back to on-demand `/i-have-adhd`:
+1. Plugin option: run `/plugin`, open **i-have-adhd**, choose **Configure**, and switch **Always on** to true. Claude Code stores it in your settings and hands it to the hook.
+2. Flag file, the pre-0.3 way, still supported:
+
+   ```bash
+   touch ~/.claude/.i-have-adhd-always
+   # or, with a custom configuration directory:
+   touch "$CLAUDE_CONFIG_DIR/.i-have-adhd-always"
+   ```
+
+3. Environment variable, for Codex and other harnesses that run `hooks/hooks.json` but have no plugin options: `I_HAVE_ADHD_ALWAYS_ON=1`.
+
+Back to on-demand: undo whichever you used. To force it off regardless of how it was turned on (for example on a shared machine where the plugin option is set for you), create the opt-out file; it wins over all three:
 
 ```bash
 touch ~/.claude/.i-have-adhd-off
 ```
 
-If you use a custom Claude configuration directory, create the opt-out file there instead:
-
-```bash
-touch "$CLAUDE_CONFIG_DIR/.i-have-adhd-off"
-```
-
-Back to always-on:
-
-```bash
-rm ~/.claude/.i-have-adhd-off
-```
-
-"stop adhd mode" still turns it off for the current session only. The pre-0.4.0 opt-in file `.i-have-adhd-always` is still accepted and changes nothing; delete it or leave it.
+"stop adhd mode" still turns it off for the current session only. Installing the plugin changes nothing by itself.
 
 </details>
 
@@ -787,12 +786,12 @@ Exceptions: explain fully when asked to explain. Confirm before destructive acti
 
 ## How activation works
 
-1. **The model never invokes it on its own.** Claude Code and Qwen Code honor `disable-model-invocation: true` in `SKILL.md`; Codex honors `policy.allow_implicit_invocation: false` in `agents/openai.yaml`. In Qwen Code nothing happens until you invoke the skill explicitly. Other harnesses may load every skill's description at startup and activate the skill themselves.
+1. **Installed, not invoked.** In Claude Code, Qwen Code, and Codex, nothing happens until you invoke the skill explicitly or turn always-on on. Claude Code and Qwen Code honor `disable-model-invocation: true` in `SKILL.md`; Codex honors `policy.allow_implicit_invocation: false` in `agents/openai.yaml`. Other harnesses may load every skill's description at startup and activate the skill themselves.
 2. **You invoke it explicitly.** Type `/i-have-adhd` in Claude Code or Qwen Code, or `$i-have-adhd` in Codex. Rules stay on for that session. "stop adhd mode" or "normal mode" turns them off.
-3. **Installed in Claude Code or Codex.** From 0.4.0 the `SessionStart` hook loads the full ruleset from message one, every session, and `SubagentStart` passes it to subagents. Opt out with `touch ~/.claude/.i-have-adhd-off`. From 0.5.0 Claude Code users can select the `i-have-adhd:i-have-adhd` output style instead; the hook then stands down.
+3. **You turn always-on on** (Claude Code, Codex): the plugin option, the `~/.claude/.i-have-adhd-always` flag file, or `I_HAVE_ADHD_ALWAYS_ON=1`. The `SessionStart` hook then loads the full ruleset from message one, every session, and `SubagentStart` passes it to subagents. Claude Code users can select the `i-have-adhd:i-have-adhd` output style instead; the hook then stands down for the main session.
 4. **You add the always-on snippet above** (other harnesses). Keeps the core rules in your agent's persistent context.
 
-In Qwen Code, no middle ground: if you did not turn it on, it is off. In Claude Code and Codex the reverse holds: it is on unless you opt out.
+In Claude Code, Qwen Code, and Codex, no middle ground: if you did not turn it on, it is off.
 
 ## Troubleshooting
 
