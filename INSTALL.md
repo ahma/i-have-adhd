@@ -109,7 +109,7 @@ Applies after `/clear` or a restart. The style keeps Claude Code's built-in soft
 
 A `SessionStart` hook loads the full ruleset at the start of every session, no `/i-have-adhd` needed. It also fires for forked sessions (`/fork`, `/branch`, `--fork-session`). A `SubagentStart` hook passes the same ruleset to every subagent except forks, which inherit the parent conversation. Both are off until you turn them on, in any one of three ways:
 
-1. Plugin option: run `/plugin`, open **i-have-adhd**, choose **Configure**, and switch **Always on** to true. Claude Code stores it in your settings and hands it to the hook.
+1. Plugin option: in a session run `/plugin configure i-have-adhd@i-have-adhd` and switch **Always on** to true, or install with the option set: `claude plugin install i-have-adhd@i-have-adhd --config always_on=true`. Claude Code stores it under `pluginConfigs` in your user `settings.json` and hands it to the hook.
 2. Flag file, the pre-0.3 way, still supported:
 
    ```bash
