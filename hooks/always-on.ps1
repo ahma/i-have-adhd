@@ -17,6 +17,16 @@ try {
     exit 0
   }
 
+  # Also silent when settings.json selects the plugin's output style: the
+  # rules are already in the system prompt (with or without a plugin prefix).
+  $settingsPath = Join-Path $claudeDir "settings.json"
+  if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
+    $settings = [System.IO.File]::ReadAllText($settingsPath)
+    if ($settings -match '"outputStyle"\s*:\s*"([^"]*:)?i-have-adhd"') {
+      exit 0
+    }
+  }
+
   $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
   $skillPath = Join-Path $scriptDir "../skills/i-have-adhd/SKILL.md"
   if (-not (Test-Path -LiteralPath $skillPath -PathType Leaf)) {

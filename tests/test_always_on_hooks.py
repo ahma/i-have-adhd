@@ -107,6 +107,41 @@ class AlwaysOnHookTest(unittest.TestCase):
                 self.assertEqual("", result.stdout)
                 self.assertEqual("", result.stderr)
 
+    def test_hook_is_silent_when_output_style_is_selected(self):
+        for style in ("i-have-adhd", "i-have-adhd:i-have-adhd"):
+            (self.config_dir / "settings.json").write_text(
+                json.dumps({"model": "x", "outputStyle": style})
+            )
+            for name, command in self.runtimes():
+                with self.subTest(runtime=name, style=style):
+                    result = self.run_hook(command)
+                    self.assertEqual(0, result.returncode)
+                    self.assertEqual("", result.stdout)
+                    self.assertEqual("", result.stderr)
+
+    def test_hook_fires_when_another_output_style_is_selected(self):
+        (self.config_dir / "settings.json").write_text(
+            json.dumps({"outputStyle": "Concise"})
+        )
+        for name, command in self.runtimes():
+            with self.subTest(runtime=name):
+                result = self.run_hook(command)
+                self.assertEqual(0, result.returncode)
+                self.assertTrue(result.stdout.startswith("ADHD MODE ACTIVE (always-on)."))
+
+    def test_output_style_mirrors_the_skill_body(self):
+        style = (ROOT / "output-styles" / "i-have-adhd.md").read_text()
+        skill = (ROOT / "skills" / "i-have-adhd" / "SKILL.md").read_text()
+        strip = lambda s: s.split("\n---\n", 1)[1].strip()
+        self.assertIn("keep-coding-instructions: true", style.split("\n---\n", 1)[0])
+        self.assertIn("\nname: i-have-adhd\n", style.split("\n---\n", 1)[0])
+        self.assertEqual(strip(skill), strip(style))
+
+    def test_session_start_matcher_includes_forked_sessions(self):
+        config = json.loads((ROOT / "hooks" / "hooks.json").read_text())
+        matcher = config["hooks"]["SessionStart"][0]["matcher"]
+        self.assertEqual({"startup", "resume", "clear", "compact", "fork"}, set(matcher.split("|")))
+
     def test_opt_out_wins_over_legacy_opt_in_flag(self):
         (self.config_dir / ".i-have-adhd-off").touch()
         (self.config_dir / ".i-have-adhd-always").touch()
@@ -188,7 +223,7 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertIn("await import", command)
         self.assertIn(".catch", command)
 
-    def run_node_hook_with_event(self, event_name, opt_out=False):
+    def run_node_hook_with_event(self, event_name, opt_out=False, **extra):
         if opt_out:
             (self.config_dir / ".i-have-adhd-off").touch()
         node = shutil.which("node")
@@ -201,8 +236,21 @@ class AlwaysOnHookTest(unittest.TestCase):
             capture_output=True,
             text=True,
             env=env,
-            input=json.dumps({"hook_event_name": event_name, "session_id": "t"}),
+            input=json.dumps({"hook_event_name": event_name, "session_id": "t", **extra}),
         )
+
+    def test_subagent_start_still_fires_when_output_style_is_selected(self):
+        (self.config_dir / "settings.json").write_text(json.dumps({"outputStyle": "i-have-adhd"}))
+        result = self.run_node_hook_with_event("SubagentStart", agent_type="Explore")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("ADHD MODE ACTIVE", json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"])
+
+    def test_subagent_start_is_silent_for_fork_subagents(self):
+        result = self.run_node_hook_with_event("SubagentStart", agent_type="fork")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("", result.stdout)
 
     def test_subagent_start_emits_additional_context_json(self):
         result = self.run_node_hook_with_event("SubagentStart")

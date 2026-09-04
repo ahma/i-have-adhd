@@ -14,6 +14,13 @@ off_path="$claude_dir/.i-have-adhd-off"
 # On by default. Stay silent only when the user has opted out.
 [ -f "$off_path" ] && exit 0
 
+# Also silent when settings.json selects the plugin's output style: the rules
+# are already in the system prompt (with or without a plugin prefix).
+settings_path="$claude_dir/settings.json"
+if [ -f "$settings_path" ] && grep -Eq '"outputStyle"[[:space:]]*:[[:space:]]*"([^"]*:)?i-have-adhd"' "$settings_path"; then
+  exit 0
+fi
+
 # $0 is the absolute script path substituted into hooks.json by Claude Code,
 # so resolve SKILL.md relative to it instead of trusting an exported env var.
 script_dir=$(dirname -- "$0")

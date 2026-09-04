@@ -99,6 +99,8 @@ claude plugin install i-have-adhd@i-have-adhd
 
 Restart Claude Code, then re-invoke `/i-have-adhd`.
 
+Claude Code can also carry the rules in the system prompt instead of the conversation: run `/config`, open **Output style**, pick `i-have-adhd`. Details in [INSTALL.md](INSTALL.md).
+
 ## Credits
 
 Loosely based on *The Adult ADHD Tool Kit* by J. Russell Ramsay and Anthony L. Rostain. Adapted for how an LLM should respond, not how a human should organize their day.

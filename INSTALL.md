@@ -93,9 +93,19 @@ claude plugin marketplace remove i-have-adhd
 
 Or keep it installed and turn it off: `claude plugin disable i-have-adhd`.
 
+### Output style (recommended)
+
+The plugin ships the same 13 rules as a Claude Code output style. An output style lives in the system prompt: it is cached, it survives compaction, and it does not depend on `node` being on `PATH`. Select it once. Run `/config`, open **Output style**, and pick `i-have-adhd` (this writes the project-local `.claude/settings.local.json`), or set it for every project in `~/.claude/settings.json`:
+
+```json
+{ "outputStyle": "i-have-adhd" }
+```
+
+Applies after `/clear` or a restart. The style keeps Claude Code's built-in software-engineering instructions (`keep-coding-instructions: true`). While the style is selected in your user `settings.json`, the `SessionStart` hook below stands down so the rules are not injected twice; `SubagentStart` still passes them to subagents, which run under their own system prompt.
+
 ### Always-on (default)
 
-A `SessionStart` hook loads the full ruleset at the start of every session, no `/i-have-adhd` needed. A `SubagentStart` hook passes the same ruleset to every subagent. Both are on as soon as the plugin is installed.
+A `SessionStart` hook loads the full ruleset at the start of every session, no `/i-have-adhd` needed. It also fires for forked sessions (`/fork`, `/branch`, `--fork-session`). A `SubagentStart` hook passes the same ruleset to every subagent except forks, which inherit the parent conversation. Both are on as soon as the plugin is installed.
 
 Turn always-on off and go back to on-demand `/i-have-adhd`:
 
@@ -777,7 +787,7 @@ Exceptions: explain fully when asked to explain. Confirm before destructive acti
 
 1. **The model never invokes it on its own.** Claude Code and Qwen Code honor `disable-model-invocation: true` in `SKILL.md`; Codex honors `policy.allow_implicit_invocation: false` in `agents/openai.yaml`. In Qwen Code nothing happens until you invoke the skill explicitly. Other harnesses may load every skill's description at startup and activate the skill themselves.
 2. **You invoke it explicitly.** Type `/i-have-adhd` in Claude Code or Qwen Code, or `$i-have-adhd` in Codex. Rules stay on for that session. "stop adhd mode" or "normal mode" turns them off.
-3. **Installed in Claude Code or Codex.** From 0.4.0 the `SessionStart` hook loads the full ruleset from message one, every session, and `SubagentStart` passes it to subagents. Opt out with `touch ~/.claude/.i-have-adhd-off`.
+3. **Installed in Claude Code or Codex.** From 0.4.0 the `SessionStart` hook loads the full ruleset from message one, every session, and `SubagentStart` passes it to subagents. Opt out with `touch ~/.claude/.i-have-adhd-off`. From 0.5.0 Claude Code users can select the `i-have-adhd` output style instead; the hook then stands down.
 4. **You add the always-on snippet above** (other harnesses). Keeps the core rules in your agent's persistent context.
 
 In Qwen Code, no middle ground: if you did not turn it on, it is off. In Claude Code and Codex the reverse holds: it is on unless you opt out.
