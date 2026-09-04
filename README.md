@@ -99,7 +99,7 @@ claude plugin install i-have-adhd@i-have-adhd
 
 Restart Claude Code, then re-invoke `/i-have-adhd`.
 
-Claude Code can also carry the rules in the system prompt instead of the conversation: run `/config`, open **Output style**, pick `i-have-adhd`. Details in [INSTALL.md](INSTALL.md).
+Claude Code can also carry the rules in the system prompt instead of the conversation: run `/config`, open **Output style**, pick `i-have-adhd:i-have-adhd`. Details in [INSTALL.md](INSTALL.md).
 
 ## Credits
 
