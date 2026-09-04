@@ -168,6 +168,56 @@ class AlwaysOnHookTest(unittest.TestCase):
         self.assertIn("await import", command)
         self.assertIn(".catch", command)
 
+    def run_node_hook_with_event(self, event_name, flag=True):
+        if flag:
+            (self.config_dir / ".i-have-adhd-always").touch()
+        node = shutil.which("node")
+        self.assertTrue(node, "node is required for the event-shape tests")
+        env = os.environ.copy()
+        env["CLAUDE_CONFIG_DIR"] = str(self.config_dir)
+        return subprocess.run(
+            [node, str(self.plugin_root / "hooks" / "always-on.mjs")],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+            input=json.dumps({"hook_event_name": event_name, "session_id": "t"}),
+        )
+
+    def test_subagent_start_emits_additional_context_json(self):
+        result = self.run_node_hook_with_event("SubagentStart")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("", result.stderr)
+        payload = json.loads(result.stdout)
+        output = payload["hookSpecificOutput"]
+        self.assertEqual("SubagentStart", output["hookEventName"])
+        self.assertIn("ADHD MODE ACTIVE", output["additionalContext"])
+        self.assertIn("## Rules", output["additionalContext"])
+        self.assertNotIn("name: i-have-adhd", output["additionalContext"])
+
+    def test_subagent_start_is_silent_without_opt_in_flag(self):
+        result = self.run_node_hook_with_event("SubagentStart", flag=False)
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("", result.stdout)
+
+    def test_session_start_json_on_stdin_keeps_plain_banner(self):
+        result = self.run_node_hook_with_event("SessionStart")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(result.stdout.startswith("ADHD MODE ACTIVE (always-on)."))
+        self.assertNotIn("hookSpecificOutput", result.stdout)
+
+    def test_hooks_json_declares_subagent_start_with_the_same_launcher(self):
+        config = json.loads((ROOT / "hooks" / "hooks.json").read_text())
+        session = config["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+        subagent_entries = config["hooks"]["SubagentStart"]
+
+        self.assertEqual(1, len(subagent_entries))
+        self.assertNotIn("matcher", subagent_entries[0])
+        self.assertEqual(session, subagent_entries[0]["hooks"][0]["command"])
+
 
 if __name__ == "__main__":
     unittest.main()
